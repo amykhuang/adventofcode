@@ -15,7 +15,7 @@ seedLocation (mapping:rest) n = seedLocation rest $ mapTo mapping n
 edgePts :: [[[Int]]] -> [Int]
 edgePts [] = []
 edgePts (mapping:rest) = map (seedLocation rest) destPts ++ (edgePts rest)
-                         where destPts = map (\l -> l!!1) mapping
+                         where destPts = map head mapping
 
 isSeed :: [Int] -> Int -> Bool
 isSeed [] _ = False
@@ -34,9 +34,10 @@ main = do
   print $ minimum $ map (seedLocation almanac) seeds
 
   -- (part 2) we only care about starting seeds that at some point map to a 
-  -- edge point, since those mark the turning points (??) so find all
+  -- edge point, since those mark the min/max points (??) so find all
   -- edge points that started from a valid seed and only try those seeds
-  let importantSeeds = filter (isSeed seeds) $ edgePts $ reverse almanac
+  let reversedAlmanac = map (map (\(a:b:rest) -> b:a:rest)) $ reverse almanac
+  let importantSeeds = filter (isSeed seeds) $ edgePts $ reversedAlmanac
   print $ minimum $ map (seedLocation almanac) $ importantSeeds
 
 lineBreak a b = (a == "" && b == "") || (a /= "" && b /= "")
