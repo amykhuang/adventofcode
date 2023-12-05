@@ -3,52 +3,39 @@
 import Data.List
 import Data.Char
 import qualified Data.Map as Map
-
-data SymType = Digit | Sym | Dot deriving (Eq, Enum)
+import Data.Maybe
 
 type Pt = (Int, Int)
-type SymbolMap = Map.Map Pt Char
-type GearList = [(Pt, [Int])]
+data SymType = Digit | Sym | Dot deriving (Eq)
 
 getType :: Char -> SymType
 getType c | isDigit c = Digit
-          | c /= '.'  = Sym
-          | otherwise = Dot
+          | c == '.'  = Dot
+          | otherwise = Sym
 
 sameType :: (Pt, Char) -> (Pt, Char) -> Bool
 sameType ((r1,_),c1) ((r2,_),c2) = getType c1 == getType c2 && r1 == r2
 
-getAdjacent :: Pt -> [Pt]
-getAdjacent (x,y) = [ (i,j) | i <- [x-1..x+1], j <- [y-1..y+1] ]
-
-isAdjacent :: [Pt] -> Pt -> Bool
-isAdjacent partPts symPt = any (== symPt) $ concat $ map getAdjacent partPts
-
-nextToSym :: SymbolMap -> ([Pt], Int) -> Bool
-nextToSym syms (pts, val) = any (flip Map.member syms) adjacentPts
-  where adjacentPts = concat $ map getAdjacent pts
+adjacentParts :: Map.Map Pt (Int, Int) -> Pt -> [Int]
+adjacentParts partsMap (x, y) = map (snd . head)
+   $ groupBy (\(id1,_) (id2,_) -> id1 == id2)
+   $ mapMaybe (flip Map.lookup partsMap) [(i,j) | i<-[x-1..x+1], j<-[y-1..y+1]]
 
 main :: IO ()
 main = do
   contents <- readFile "input03.txt"
-  let indexed = concat $ map toIndexed $ zip [0..] $ lines contents
-  let symbolMap = Map.fromList $ filter ((== Sym) . getType . snd) indexed
-  let numbers = map (\(pts, s) -> (pts, read s :: Int))
-                $ map unzip
-                $ filter (isDigit . snd . head)
-                $ groupBy sameType indexed
-  -- Part 1
-  print $ sum $ map snd $ filter (nextToSym symbolMap) numbers
-  -- Part 2
-  let gearList = zip (Map.keys $ Map.filter (== '*') symbolMap) (repeat [])
-  print $ sum $ map (foldl (*) 1) $ filter ((== 2) . length)
-        $ map snd $ foldl updateGearMap gearList numbers
+  let schematic = concat $ map parse $ zip [0..] $ lines contents
+  let parts = Map.fromList
+              $ concat
+              $ map (\(id, (pts, n)) -> [(pt, (id, read n::Int)) | pt <- pts])
+              $ zip [1, 2..]
+              $ map unzip
+              $ filter (isDigit . snd . head)
+              $ groupBy sameType schematic 
+  let symbols = map fst $ filter ((== Sym) . getType . snd) schematic
+  let gears = map fst $ filter ((== '*') . snd) schematic
+  print $ sum $ concat $ map (adjacentParts parts) symbols
+  print $ sum $ map product $ filter ((== 2) . length) $ map (adjacentParts parts) gears
  
-updateGearMap :: GearList -> ([Pt], Int) -> GearList
-updateGearMap gears (parts, partVal) = 
-  [if isAdjacent parts gear then (gear, partVal:adj) else old | old@(gear, adj) <- gears]
-
-toIndexed :: (Int, String) -> [(Pt, Char)]
-toIndexed (row, line) = map (\(col, c) -> ((row, col), c)) $ zip [0..] line
-
-
+parse :: (Int, String) -> [(Pt, Char)]
+parse (row, line) = map (\(col, c) -> ((row, col), c)) $ zip [0..] line
