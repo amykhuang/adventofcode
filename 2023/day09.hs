@@ -1,25 +1,21 @@
 --- Day 9: Mirage Maintenance ---
 
-import qualified Data.Text as T
+parse :: String -> [[Int]]
+parse = map (map read . words) . lines
 
 diffs :: [Int] -> [Int]
-diffs h = [ a - b | (a,b) <- zip (tail h) h ]
-
-allDiffs :: [Int] -> [[Int]]
-allDiffs = takeWhile (not . all (0==)) . iterate diffs
+diffs h = zipWith (-) (tail h) h
 
 predict :: [Int] -> Int
-predict = foldl (+) 0 . map last . reverse . allDiffs
+predict ls
+  | all (0 ==) ls = 0
+  | otherwise = (last ls) + predict (diffs ls)
 
-predictBackwards :: [Int] -> Int
-predictBackwards = foldl (flip (-)) 0 . map head . reverse . allDiffs
+solve = sum . map predict
 
 main :: IO ()
 main = do
   contents <- readFile "input09.txt"
-  let histories = map parse $ T.lines $ T.pack contents
-  print $ sum $ map predict histories
-  print $ sum $ map predictBackwards histories
-
-parse :: T.Text -> [Int]
-parse s = map (read . T.unpack) $ T.splitOn (T.pack " ") s
+  let histories = parse contents
+  print $ solve histories
+  print $ solve $ map reverse histories
