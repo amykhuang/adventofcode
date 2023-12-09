@@ -31,6 +31,5 @@ main = do
   print $ lcms $ map (ghostTravel nodesMap (cycle dirs)) $ endsInA nodesMap
 
 parseNode :: String -> (String, (String, String))
-parseNode s = (key, (left, init right))
-  where (key, _:_:_:val)    = splitAt 3 s
-        ('(':left, ',':_:right) = splitAt 4 val
+parseNode s = (key, (tail $ init left, init right))
+  where (key:_:left:right:_) = words s
