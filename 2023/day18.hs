@@ -7,8 +7,8 @@ import Data.Maybe (mapMaybe)
 import Data.Set (toList, fromList)
 
 data Dir = R | D | L | U deriving (Show)
-type DigPlan = [(Dir, Integer)]
-type Trench = [(Integer, [Integer])]
+type DigPlan = [(Dir, Int)]
+type Trench = [(Int, [Int])]
 
 dig :: DigPlan -> Trench
 dig plan = map (\(a,b) -> (a, sort b)) $ sort $ assocs $ trace (0,0) plan
@@ -19,13 +19,13 @@ dig plan = map (\(a,b) -> (a, sort b)) $ sort $ assocs $ trace (0,0) plan
                                            L -> (x, y - n)
                                            U -> (x - n, y)
 
-merge :: [(Integer, Integer)] -> [(Integer, Integer)]
+merge :: [(Int, Int)] -> [(Int, Int)]
 merge ((i,j):(k,l):rest)
   | j == k    = merge ((i,l):rest)
   | otherwise = (i,j):(merge ((k,l):rest))
 merge l = l
 
-overlap :: [(Integer, Integer)] -> [Integer] -> Bool -> (Integer, Integer)  -> Bool
+overlap :: [(Int, Int)] -> [Int] -> Bool -> (Int, Int)  -> Bool
 overlap prevSegments segments isSegment (a, b)
   | isSegment     && isOverlap     = False
   | isSegment     && not isOverlap = True
@@ -33,13 +33,13 @@ overlap prevSegments segments isSegment (a, b)
   | not isSegment && not isOverlap = False
   where isOverlap = any (\(i,j) -> a >= i && a <= j && b >= i && b <= j) prevSegments
 
-disperse :: [Integer] -> [(Integer, Integer)] -> [(Integer, Integer)]
+disperse :: [Int] -> [(Int, Int)] -> [(Int, Int)]
 disperse (pt:pts) ((a, b):segments)
   | pt > a && pt < b = [(a, pt), (pt, b)] ++ disperse pts segments
   | otherwise = (a, b):(disperse pts segments)
 disperse _ segments = segments
 
-fill :: (Integer, [(Integer, Integer)]) -> Trench -> Integer
+fill :: (Int, [(Int, Int)]) -> Trench -> Int
 fill _ [] = 1  -- add 1 to account for undercounting the segment on the first line
 fill (row, ls) ((row', pts'):trench) =
   area + fill (row', merge $ sort $ (segments'++implicit')) trench
@@ -66,7 +66,7 @@ toTuples = mapMaybe toTuple
 fromTuples = concat . map (\(a, b) -> [a, b])
 deduplicate = sort . toList . fromList
 
-volume :: DigPlan -> Integer
+volume :: DigPlan -> Int
 volume plan = fill start trench
   where trench = dig plan
         start = (fst $ head $ trench, [])
@@ -78,7 +78,7 @@ main = do
   print $ volume plan
   print $ volume bigPlan
 
-parse :: String -> ((Dir, Integer), (Dir, Integer))
+parse :: String -> ((Dir, Int), (Dir, Int))
 parse line = ((makeDir dir, read n), (makeDir dir', read ("0x"++n')))
   where (dir:n:color:[]) = words line
         (n', dir') = splitAt 5 (init $ tail $ tail $ color)
