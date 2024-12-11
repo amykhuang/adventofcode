@@ -7,8 +7,8 @@ INPUTFILE=$1
 paste -d'-' \
   <(cat $INPUTFILE | tr -s ' ' | cut -d' ' -f1 | sort -n) \
   <(cat $INPUTFILE | tr -s ' ' | cut -d' ' -f2 | sort -n) \
-  | bc \
-  | tr -d '-' \
+  | bc \         # calculator
+  | tr -d '-' \  # absolute value by deleting minus signs
   | awk '{ sum += $1 } END { print sum }'
 
 while read ct n; do
