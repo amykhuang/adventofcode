@@ -2,7 +2,7 @@
 
 ### Day 3: Mull It Over ###
 
-INPUTFILE=inputs/day03.txt
+INPUTFILE=$1
 
 mulregex="mul\(([0-9]+),([0-9]+)\)"
 
